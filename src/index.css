@@ -2,9 +2,12 @@ body {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-  height: 100vh; /* Set the body height to fill the viewport */
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  color: white;
+  background: #333;
+  visibility: hidden;
 }
 
 header {
@@ -17,21 +20,19 @@ header {
 .main {
   display: flex;
   flex: 1;
-  overflow: hidden; /* Hide overflow in the main section */
+  overflow: hidden;
 }
 
 .section {
   padding: 10px;
-  border: 1px solid #ddd;
-  background-color: #f9f9f9;
+  background-color: #505050;
   overflow: auto;
   box-sizing: border-box;
 }
 
 .bottomSection {
   padding: 10px;
-  border: 1px solid #ddd;
-  background-color: #f9f9f9;
+  background-color: #505050;
   resize: vertical;
   overflow: auto;
 }
@@ -42,4 +43,53 @@ header {
 
 .gutter-vertical {
   cursor: ns-resize;
+}
+
+.hierarchyul {
+  margin: 0;
+  padding: 0;
+}
+
+.hierarchyli {
+  margin: 5px 0;
+  padding: 0 20px;
+  height: 40px;
+  line-height: 40px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #b31217, #e52d27);
+  color: #fff;
+  list-style: none;
+  cursor: grab;
+}
+
+li.drag-sort-active {
+  background: darkslategray !important;
+  color: transparent;
+  border: 1px solid #4ca1af;
+}
+
+span.drag-sort-active {
+  background: darkslategray !important;
+  color: transparent;
+}
+
+#loader {
+  border: 12px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 12px solid #444444;
+  width: 70px;
+  height: 70px;
+  animation: spin 1s linear infinite;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }

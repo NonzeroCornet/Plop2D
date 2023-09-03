@@ -1,26 +1,33 @@
+document.onreadystatechange = function () {
+  if (document.readyState !== "complete") {
+    document.querySelector("body").style.visibility = "hidden";
+    document.querySelector("#loader").style.visibility = "visible";
+  } else {
+    setTimeout(() => {
+      document.querySelector("#loader").style.display = "none";
+      document.querySelector("body").style.visibility = "visible";
+    }, 100);
+  }
+};
+
 function generateObjectId() {
   return Math.random().toString(36).substr(2, 9);
 }
-var hierarchyData;
 document.addEventListener("DOMContentLoaded", function () {
-  hierarchyData = {};
-  let selectedObject = null;
-
   var main = document.querySelector(".main");
   var sections = document.querySelectorAll(".section");
   var gameHierarchy = document.getElementById("gameHierarchy");
   var hierarchyMenu = document.getElementById("contextMenu");
 
-  // Create resizable panels using Split.js
   Split(sections, {
-    sizes: [20, 50, 30, 20], // Initial sizes for each section (percentages)
-    minSize: [100, 200, 100, 100], // Minimum sizes for each section
-    gutterSize: 2, // Space between sections
+    sizes: [20, 50, 30, 20],
+    minSize: [100, 200, 100, 100],
+    gutterSize: 2,
   });
 
   Split([main, document.querySelector(".bottomSection")], {
-    sizes: [80, 20], // Initial sizes for each section (percentages)
-    minSize: [300, 100], // Minimum sizes for each section
+    sizes: [80, 20],
+    minSize: [300, 100],
     direction: "vertical",
     gutterSize: 2,
     snapOffset: 0,
@@ -38,12 +45,8 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   gameHierarchy.addEventListener("contextmenu", function (event) {
-    event.preventDefault(); // Prevent default context menu from appearing
-    var x = event.clientX;
-    var y = event.clientY;
-    hierarchyMenu.style.display = "block";
-    hierarchyMenu.style.left = x + "px";
-    hierarchyMenu.style.top = y + "px";
+    event.preventDefault();
+    showContextMenu(event.clientX, event.clientY);
   });
 
   document.addEventListener("click", function (event) {
@@ -52,80 +55,36 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  function refreshHierarchyView() {
-    gameHierarchy.innerHTML = "";
-    createHierarchyView(null, gameHierarchy);
-  }
-
-  function createHierarchyView(parentId, container) {
-    for (var objectId in hierarchyData) {
-      if (!hierarchyData[objectId].parent && parentId === null) {
-        var hierarchyItem = document.createElement("div");
-        hierarchyItem.className = "hierarchy-item";
-        hierarchyItem.textContent = `Object ID: ${hierarchyData[objectId].id}`;
-        hierarchyItem.addEventListener("contextmenu", function (event) {
-          event.preventDefault();
-          showContextMenu(objectId, event.clientX, event.clientY);
-        });
-
-        container.appendChild(hierarchyItem);
-
-        if (hierarchyData[objectId].children.length > 0) {
-          var childContainer = document.createElement("div");
-          childContainer.className = "child-container";
-          hierarchyItem.appendChild(childContainer);
-
-          createHierarchyView(objectId, childContainer);
-        }
-      } else if (
-        hierarchyData[objectId].parent &&
-        hierarchyData[objectId].parent.id === parentId
-      ) {
-        // Similar structure as above with context menu added
-      }
-    }
-  }
-
-  function showContextMenu(objectId, x, y) {
+  function showContextMenu(x, y) {
     var contextMenu = document.getElementById("contextMenu");
     contextMenu.style.display = "block";
     contextMenu.style.left = x + "px";
     contextMenu.style.top = y + "px";
 
-    var addChildItem = document.getElementById("addChild");
-    var moveUpItem = document.getElementById("moveUp");
-    var moveDownItem = document.getElementById("moveDown");
-    var nestItem = document.getElementById("nest");
+    var createGameObject = document.getElementById("createGameObject");
     var removeItem = document.getElementById("remove");
 
-    addChildItem.addEventListener("click", function () {
-      console.log("pop");
-      hierarchyData[objectId].children.push(generateObjectId());
-      refreshHierarchyView();
+    createGameObject.onclick = function () {
+      let newId = generateObjectId();
+      hierarchy[newId] = {
+        parent: "root",
+        compoments: {
+          transform: [0, 0, 0, 1, 1],
+        },
+      };
+      document.querySelector(".hierarchyul").innerHTML +=
+        '<li class="hierarchyli" id="' +
+        newId +
+        '" onclick="selectGameObject(this)">GameObject</li>';
       contextMenu.style.display = "none";
-    });
-
-    moveUpItem.addEventListener("click", function () {
-      moveObjectUp(objectId);
-      refreshHierarchyView();
-      contextMenu.style.display = "none";
-    });
-
-    moveDownItem.addEventListener("click", function () {
-      moveObjectDown(objectId);
-      refreshHierarchyView();
-      contextMenu.style.display = "none";
-    });
-
-    nestItem.addEventListener("click", function () {
-      nestObject(objectId);
-      refreshHierarchyView();
-      contextMenu.style.display = "none";
-    });
+      enableDragSort("drag-sort-enable");
+    };
 
     removeItem.addEventListener("click", function () {
-      removeObject(objectId);
-      refreshHierarchyView();
+      document.getElementById(selectedGameObject)
+        ? document.getElementById(selectedGameObject).remove()
+        : null;
+      selectedGameObject = "";
       contextMenu.style.display = "none";
     });
 
@@ -134,5 +93,94 @@ document.addEventListener("DOMContentLoaded", function () {
         contextMenu.style.display = "none";
       }
     });
+  }
+});
+
+var hierarchy = {};
+var selectedGameObject = "";
+
+function enableDragSort(listClass) {
+  const sortableLists = document.getElementsByClassName(listClass);
+  Array.prototype.map.call(sortableLists, (list) => {
+    enableDragList(list);
+  });
+}
+
+function enableDragList(list) {
+  Array.prototype.map.call(list.children, (item) => {
+    enableDragItem(item);
+  });
+}
+
+function enableDragItem(item) {
+  item.setAttribute("draggable", true);
+  item.ondrag = handleDrag;
+  item.ondragend = handleDrop;
+}
+
+function handleDrag(item) {
+  const selectedItem = item.target,
+    list = selectedItem.parentNode,
+    x = event.clientX,
+    y = event.clientY;
+
+  selectedItem.classList.add("drag-sort-active");
+  let swapItem =
+    document.elementFromPoint(x, y) === null
+      ? selectedItem
+      : document.elementFromPoint(x, y);
+
+  if (list === swapItem.parentNode) {
+    swapItem =
+      swapItem !== selectedItem.nextSibling ? swapItem : swapItem.nextSibling;
+    list.insertBefore(selectedItem, swapItem);
+  }
+
+  const dropX = event.clientX - list.getBoundingClientRect().left;
+  selectedItem.style.marginLeft = Math.round(dropX / 50) * 50 + "px";
+}
+
+function handleDrop(event) {
+  const selectedItem = event.target;
+  selectedItem.classList.remove("drag-sort-active");
+
+  const list = document.querySelector(".hierarchyul");
+  const dropX = event.clientX - list.getBoundingClientRect().left;
+  selectedItem.style.marginLeft = Math.round(dropX / 50) * 50 + "px";
+
+  for (let i = 0; i < list.children.length; i++) {
+    hierarchy[list.children[i].id].parent = "root";
+    for (let x = i - 1; x >= -1; x--) {
+      if (x != -1) {
+        if (
+          Number(list.children[x].style.marginLeft.split("px")[0]) <
+          Number(list.children[i].style.marginLeft.split("px")[0])
+        ) {
+          hierarchy[list.children[i].id].parent = list.children[x].id;
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+  }
+}
+
+function selectGameObject(elem) {
+  for (
+    let i = 0;
+    i < document.querySelector(".hierarchyul").children.length;
+    i++
+  ) {
+    document.querySelector(".hierarchyul").children[i].style.background =
+      "linear-gradient(to right, #b31217, #e52d27)";
+  }
+  elem.style.background = "linear-gradient(to right, #4cede8, #1ad2d8)";
+  selectedGameObject = elem.id;
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.ctrlKey) {
+    event.preventDefault();
   }
 });

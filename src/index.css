@@ -37,9 +37,9 @@ header {
 }
 
 .gutter-horizontal {
-  cursor: col-resize;
+  cursor: ew-resize;
 }
 
 .gutter-vertical {
-  cursor: row-resize;
+  cursor: ns-resize;
 }
